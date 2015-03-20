@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"time"
 )
-
 
 type Db struct {
 	connection *sql.DB
@@ -13,7 +13,7 @@ type Db struct {
 
 func (db *Db) initdb() error {
 	_, err := db.connection.Exec(`
-		CREATE TABLE IF NOT EXISTS Todos (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL)
+		CREATE TABLE IF NOT EXISTS Todos (id INTEGER PRIMARY KEY NOT NULL, content TEXT NOT NULL, modificationtime TIMESTAMP NOT NULL)
 	`)
 	if err != nil {
 		return err
@@ -30,9 +30,9 @@ func (db *Db) InsertTodo(todo string) error {
 		log.Fatal(err)
 		return err
 	}
-	stmt, err := tx.Prepare(`INSERT INTO Todos(name) VALUES(?)`)
+	stmt, err := tx.Prepare(`INSERT INTO Todos(content, modificationtime) VALUES(?, ?)`)
 	defer stmt.Close()
-	_, err = stmt.Exec(todo)
+	_, err = stmt.Exec(todo, time.Now())
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -50,7 +50,7 @@ func OpenDatabase(dbpath string) (*Db, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbobj := Db {
+	dbobj := Db{
 		connection: db,
 	}
 	err = dbobj.initdb()
